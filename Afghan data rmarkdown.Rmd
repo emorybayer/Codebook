@@ -1,0 +1,467 @@
+---
+title: "Codebook for Afghanistan WorldBank Data"
+output: pdf_document
+date: "2024-02-28"
+author: Emory Bayer
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  eval = TRUE,
+  fig.align = 'center',
+  message = FALSE,
+  warning = FALSE,
+  library(tidyverse),
+  library(knitr))
+  library(dplyr)
+```
+
+```{r}
+setwd("C:/Users/emory/Documents/Statistics Level 2")
+Afghan_data <- read.csv("Afghanistan Data Round 2.csv") %>%
+               slice(-(1:4)) %>%
+  rename(
+    Country = Data.Source,
+    Country.code = World.Development.Indicators,
+    Indicator.name = X,
+    Indicator.code = X.1,
+    "1960" = X.2,
+    "1961" = X.3,
+    "1962" = X.4,
+    "1963" = X.5,
+    "1964" = X.6,
+    "1965" = X.7, 
+    "1966" = X.8,
+    "1967" = X.9,
+    "1968" = X.10,
+    "1969" = X.11, 
+    "1970" = X.12,
+    "1971" = X.13,
+    "1972" = X.14,
+    "1973" = X.15,
+    "1974" = X.16,
+    "1975" = X.17,
+    "1976" = X.18,
+    "1977" = X.19,
+    "1978" = X.20,
+    "1979" = X.21,
+    "1980" = X.22,
+    "1981" = X.23,
+    "1982" = X.24,
+    "1983" = X.25,
+    "1984" = X.26,
+    "1985" = X.27,
+    "1986" = X.28,
+    "1987" = X.29,
+    "1988" = X.30,
+    "1989" = X.31,
+    "1990" = X.32,
+    "1991" = X.33,
+    "1992" = X.34,
+    "1993" = X.35,
+    "1994" = X.36,
+    "1995" = X.37,
+    "1996" = X.38,
+    "1997" = X.39,
+    "1998" = X.40,
+    "1999" = X.41,
+    "2000" = X.42,
+    "2001" = X.43,
+    "2002" = X.44,
+    "2003" = X.45,
+    "2004" = X.46,
+    "2005" = X.47,
+    "2006" = X.48,
+    "2007" = X.49,
+    "2008" = X.50,
+    "2009" = X.51,
+    "2010" = X.52,
+    "2011" = X.53,
+    "2012" = X.54,
+    "2013" = X.55,
+    "2014" = X.56,
+    "2015" = X.57,
+    "2016" = X.58,
+    "2017" = X.59,
+    "2018" = X.60,
+    "2019" = X.61,
+    "2020" = X.62,
+    "2021" = X.63,
+    "2022" = X.64,
+      ) 
+names(Afghan_data) <- gsub(",", ".", names(Afghan_data))
+
+data_long =
+  pivot_longer(Afghan_data, cols = matches("^(19|20|201|202)"), names_to = "Year",
+               values_to = "Value") 
+
+wide_df =
+  pivot_wider(data_long, 
+                       id_cols = c(`Year`, `Country`, `Country.code`), 
+                       names_from = Indicator.name, 
+                       values_from = Value)
+ 
+  cleaned_data = 
+   wide_df[, colMeans(is.na(wide_df)) <= 0.05] %>%
+   rename(
+     `Urban.population` = `Urban population (% of total population)`,
+     `Rural.population.growth` = `Rural population growth (annual %)`,
+     `Population.total` = `Population, total`,
+     `Population.largest.city` = `Population in the largest city (% of urban population)`,
+     `Female.survival.65` = `Survival to age 65, female (% of cohort)`,
+     `Male.survival.65` = `Survival to age 65, female (% of cohort)`,
+     `Male.life.expectancy` = `Life expectancy at birth, male (years)`,
+     `Female.life.expectancy` = `Life expectancy at birth, female (years)`,
+     `Fertility.rate` = `Fertility rate, total (births per woman)`,
+     `Net.migration` = `Net migration`,
+   ) |> select(Year, Country, Population.total, Urban.population,
+          Population.largest.city, Rural.population.growth, Fertility.rate,
+          Net.migration, Male.life.expectancy, Female.life.expectancy) %>%
+   mutate_all(~replace(., is.na(.), 0))
+  
+  cleaned_data$Population.category <- ifelse(cleaned_data$Population.total < 10000000, "Low Population",
+                                            ifelse(cleaned_data$Population.total >= 10000000 & cleaned_data$Population.total < 20000000, 
+                                                   "Medium Population",
+                                                   ifelse(cleaned_data$Population.total >= 20000000, "High Population", NA)
+                                            )
+ )
+ 
+ cleaned_data$F.life.expectancy.category <- ifelse(cleaned_data$Female.life.expectancy < 40, 
+                                                   "Lowest life expectancy", 
+                                                   ifelse(cleaned_data$Female.life.expectancy >= 40 & cleaned_data$Female.life.expectancy < 50,
+                                                          "Lower life expectancy",
+                                                          ifelse(cleaned_data$Female.life.expectancy >= 50 & cleaned_data$Female.life.expectancy < 60,
+                                                                 "Medium life expectancy",
+                                                                 ifelse(cleaned_data$Female.life.expectancy >= 60,
+                                                                        "Highest life expectancy",
+                                                                        NA
+                                                                 )
+                                                          )
+                                                   )
+ )
+
+     
+ cleaned_data$M.life.expectancy.category <- ifelse(cleaned_data$Male.life.expectancy < 30, 
+                                                   "Lowest life expectancy", 
+                                                   ifelse(cleaned_data$Male.life.expectancy >= 30 & cleaned_data$Male.life.expectancy < 40,
+                                                          "Lower life expectancy",
+                                                          ifelse(cleaned_data$Male.life.expectancy >= 40 & cleaned_data$Male.life.expectancy <= 50,
+                                                                 "Medium life expectancy",
+                                                                 ifelse(cleaned_data$Male.life.expectancy >= 50 & cleaned_data$Male.life.expectancy <= 60,
+                                                                        "Higher life expectancy",
+                                                                ifelse(cleaned_data$Male.life.expectancy >= 60,
+                                                                       "Highest life expectancy",
+                                                                       NA)
+                                                                 )
+                                                          )
+                                                   )
+ )
+
+
+```
+
+# **Overview of Data**: 
+
+This data focuses on measuring World Development Indicators for the country of Afghanistan from the years 1960 to 2022. It encompasses a variety of social, economic, environmental, and institutional variables within Afghanistan. For this project, the data has been cleaned to include only variables where 95% of the responses for each year were recorded or were not NA values. The variables chosen to be included within the cleaned data comprise life expectancy broken down by gender, population totals, population distributions between urban and rural areas, fertility rates, and net migration."
+
+# **Sources and Methodology**: 
+This data is sourced from the World Bank and was collected on a yearly basis following the fiscal year schedule, wherein the reporting period concluded on March 20th each year. The World Bank employed data from various sources, including the United Nations Population Division, the United Nations Statistical Division Population and Vital Statistics Report, census reports, and other statistical publications from Afghan statistical offices, as well as the Secretariat of the Pacific Community: Statistics and Demography Programme.I have included the link below where the data was retrieved from:
+
+https://data.worldbank.org/country/afghanistan
+
+
+***Note on missing values***: 
+
+Missing values in this dataset were initially recorded as 'NA.' However, I have recoded all these missing values as 0. In the summary statistics for variables, I have indicated which values represent NAs and from which year they originate.
+
+
+
+# **Itemized Presentation of Variables:** 
+
+
+
+## **Variable name** : ***Year***
+
+**Variable type** : Numeric 
+
+**Description**: 
+
+The 'year' variable records the timeframe during which the data was captured. The data spans from the years 1960 to 2022.
+  
+## **Variable name**: ***Country***
+
+**Variable type**: Character
+
+**Description**: 
+The 'country' variable represents the country in which the data was recorded. For this dataset, all values pertain to Afghanistan.
+
+## **Variable name**: ***Population.total*** 
+
+**Variable Type**: Numeric 
+
+**Description**: 
+This variable represents a midyear estimate of the number of people residing in Afghanistan in the year the data was collected, regardless of legal status or citizenship. 
+
+```{r}
+
+population_summary = cleaned_data %>%
+  summarise(
+    mean = mean(Population.total, na.rm = TRUE),
+    median = median(Population.total, na.rm = TRUE),
+    min = min(Population.total, na.rm = TRUE),
+    max = max(Population.total, na.rm = TRUE)
+  ) %>%
+  rename(
+    "Mean Population" = mean,
+    "Median Population" = median,
+    "Minimum Population" = min,
+    "Maximum Population" = max
+  )
+
+kable(population_summary)
+
+```
+
+## **Variable name**: ***Urban.population***
+
+**Variable Type**: Numeric
+
+**Description**: 
+This variable represents the percentage of the population living in urban areas, ranging from 0 to 100%, divided by the total population. 
+
+```{r}
+urban_population_summary = cleaned_data %>%
+  summarise(
+    mean = mean(Urban.population, na.rm = TRUE),
+    median = median(Urban.population, na.rm = TRUE),
+    min = min(Urban.population, na.rm = TRUE),
+    max = max(Urban.population, na.rm = TRUE)
+  ) %>%
+  rename(
+    "Mean Urban Population" = mean,
+    "Median Urban Population" = median,
+    "Minimum Urban Population" = min,
+    "Maximum Urban Population" = max
+  )
+
+kable(urban_population_summary)
+
+```
+
+## **Variable name**: ***Population.largest.city*** 
+
+**Variable type**: Numeric
+
+**Description**: 
+This variable represents the percentage of a country's urban population living in the country's largest metropolitan area. In the case of Afghanistan, this metropolitan area is Kabul.
+
+```{r}
+city_population_summary = cleaned_data %>%
+  summarise(
+    mean = mean(Urban.population, na.rm = TRUE),
+    median = median(Urban.population, na.rm = TRUE),
+    min = min(Urban.population, na.rm = TRUE),
+    max = max(Urban.population, na.rm = TRUE)
+  ) %>%
+  rename(
+    "Mean Percentage living in Largest City" = mean,
+    "Median Percentage living in Largest City" = median,
+    "Minimum Percentage living in Largest City" = min,
+    "Maximum Percentage living in Largest City" = max
+  )
+
+kable(city_population_summary)
+
+```
+## **Variable name**: ***Rural.population.growth*** 
+
+**Variable type**: Numeric
+
+**Description**: 
+This variable represents the population living in areas defined by the national statistics office as rural areas. It is calculated by computing the difference between the total population and the urban population. 
+
+```{r}
+rural_population_summary = cleaned_data %>%
+  summarise(
+    mean = mean(Rural.population.growth, na.rm = TRUE),
+    median = median(Rural.population.growth, na.rm = TRUE),
+    min = min(Rural.population.growth, na.rm = TRUE),
+    max = max(Rural.population.growth, na.rm = TRUE)
+  ) %>%
+  rename(
+    "Mean Rural Population" = mean,
+    "Median Rural Population" = median,
+    "Minimum Rural Population" = min,
+    "Maximum Rural Population" = max
+  )
+
+kable(rural_population_summary)
+
+```
+
+## **Variable name**: ***Fertility.rate***
+
+**Variable type**: Numeric
+
+**Description**: 
+This variable represents the number of children that a woman would have if she lives through her full childbearing years, based on fertility rates from that specific year. For the year 2022, no data was collected for this variable, which is indicated by the minimum summary statistic of 0.
+
+```{r}
+fertility_rate_summary = cleaned_data %>%
+  summarise(
+    mean = mean(Fertility.rate, na.rm = TRUE),
+    median = median(Fertility.rate, na.rm = TRUE),
+    min = min(Fertility.rate, na.rm = TRUE),
+    max = max(Fertility.rate, na.rm = TRUE)
+  ) %>%
+  rename(
+    "Mean Fertility.rate" = mean,
+    "Median Fertility.rate" = median,
+    "Minimum Fertility.rate" = min,
+    "Maximum Fertility.rate" = max
+  )
+
+kable(fertility_rate_summary)
+```
+
+## **Variable name**: ***Net.migration***
+
+**Variable type**: Numeric
+
+**Description**: 
+This variable represents the net total of migrants during each fiscal year calendar. It accounts for both citizens and non-citizens and is calculated by subtracting the number of emigrants from the number of immigrants.
+
+```{r}
+net_migration_summary = cleaned_data %>%
+  summarise(
+    mean = mean(Net.migration, na.rm = TRUE),
+    median = median(Net.migration, na.rm = TRUE),
+    min = min(Net.migration, na.rm = TRUE),
+    max = max(Net.migration, na.rm = TRUE)
+  ) %>%
+  rename(
+    "Mean Net.migration" = mean,
+    "Median Net.migration" = median,
+    "Minimum Net.migration" = min,
+    "Maximum Net.migration" = max
+  )
+
+kable(net_migration_summary)
+```
+
+## **Variable name**: ***Male.life.expectancy***
+
+**Variable type**: Numeric
+
+**Description**: 
+This variable represents the lifespan of a male newborn if patterns of mortality at the time of their birth stayed the same throughout their whole lifetime. For the year 2022, no data was collected for this variable, which is indicated by the minimum summary statistic of 0.
+
+```{r}
+m_life_expec_summary = cleaned_data %>%
+  summarise(
+    mean = mean(Male.life.expectancy, na.rm = TRUE),
+    median = median(Male.life.expectancy, na.rm = TRUE),
+    min = min(Male.life.expectancy , na.rm = TRUE),
+    max = max(Male.life.expectancy , na.rm = TRUE)
+  ) %>%
+  rename(
+    "Mean Male life expectancy " = mean,
+    "Median Male life expectancy " = median,
+    "Minimum Male life expectancy " = min,
+    "Maximum Male life expectancy " = max
+  )
+
+kable(m_life_expec_summary)
+```
+
+## **Variable name**: ***Female.life.expectancy***
+
+**Variable type**: Numeric
+
+**Description**: 
+This variable represents the lifespan of a female newborn if patterns of mortality at the time of her birth stayed the same throughout her whole lifetime. For the year 2022, no data was collected for this variable, which is indicated by the minimum summary statistic of 0.
+
+```{r}
+f_life_expec_summary = cleaned_data %>%
+  summarise(
+    mean = mean(Female.life.expectancy, na.rm = TRUE),
+    median = median(Female.life.expectancy, na.rm = TRUE),
+    min = min(Female.life.expectancy , na.rm = TRUE),
+    max = max(Female.life.expectancy , na.rm = TRUE)
+  ) %>%
+  rename(
+    "Mean Female life expectancy" = mean,
+    "Median Female life expectancy" = median,
+    "Minimum Female life expectancy" = min,
+    "Maximum Female life expectancy" = max
+  )
+
+kable(f_life_expec_summary)
+
+```
+
+## **Variable name**: ***Population.category*** 
+
+**Variable type**: Factor
+
+**Description**: 
+This variable takes on the value of "Low Population" for years where the population total was under 1,000,000, "Medium Population" for years where the population was between 1,000,000 and 2,000,000, and "High Population" for years where the population was greater than 2,000,000.
+
+```{r}
+population_order = c("Low Population", "Medium Population", "High Population")
+
+Pop_category_summary = cleaned_data %>%
+  group_by(Population.category) %>%
+  summarise(
+    freq = n(),
+    mean_population = mean(Population.total)
+  ) %>%
+  arrange(factor(Population.category, levels = population_order))
+
+kable(Pop_category_summary)  
+```
+
+## **Variable name**: ***F.life.expectancy.category*** 
+
+**Variable type**: Factor
+
+**Description**: 
+This variable takes on the value of "Lowest life expectancy" for specific years where women's life expectancy is less than 40 years, "Lower life expectancy" for specific years where women's life expectancy is between 40 and 50 years, "Medium life expectancy" for specific years where women's life expectancy is between 50 and 60 years, and "Highest life expectancy" for specific years where women's life expectancy is over 60 years.
+
+```{r}
+F_life_expec_order = c("Lowest life expectancy", "Lower life expectancy", "Medium life expectancy","Highest Life expectancy")
+
+F_life_sum = cleaned_data %>%
+  group_by(F.life.expectancy.category) %>%
+  summarise(
+    freq = n(),
+    mean.life.expectancy = mean(Female.life.expectancy)
+  ) %>%
+  arrange(factor(F.life.expectancy.category, levels = F_life_expec_order))
+
+kable(F_life_sum)
+```
+
+## **Variable name**: ***M.life.expectancy.category***
+
+**Variable type**: Factor
+
+**Description**: 
+This variable takes on the value of "Lowest life expectancy" for specific years where a man's life expectancy is under 30 years, "Lower life expectancy" for specific years where a man's life expectancy is between 30 and 40 years, "Medium life expectancy" for specific years where a man's life expectancy is between 40 and 50 years, "Higher life expectancy" for specific years where a man's life expectancy is between 50 and 60 years, and "Highest life expectancy" for specific years where a man's life expectancy is greater than 60 years.
+
+```{r}
+M_life_expec_order = c("Lowest life expectancy", "Lower life expectancy", "Medium life expectancy", "Higher Life expectancy", "Highest Life expectancy")
+
+M_life_sum = cleaned_data %>%
+  group_by(M.life.expectancy.category) %>%
+  summarise(
+    freq = n(),
+    mean.life.expectancy = mean(Male.life.expectancy)
+  ) %>%
+  arrange(factor(M.life.expectancy.category, levels = M_life_expec_order))
+
+kable(M_life_sum)
+```
+
+
